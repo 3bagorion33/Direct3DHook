@@ -3,3 +3,14 @@
 Capture/obj
 TestScreenshot/obj
 bin
+/.vs
+/packages
+/Capture/EasyHook32.dll
+/Capture/EasyHook32Svc.exe
+/Capture/EasyHook64.dll
+/Capture/EasyHook64Svc.exe
+/Capture/EasyLoad32.dll
+/Capture/EasyLoad64.dll
+/Capture/EasyLoad64.dll
+/Capture/EasyHook32Svc.exe
+/Capture/EasyHook32.dll

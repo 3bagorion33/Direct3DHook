@@ -62,7 +62,6 @@ namespace Capture
 
             try
             {
-
                 // Inject DLL into target process
                 RemoteHooking.Inject(
                     process.Id,
