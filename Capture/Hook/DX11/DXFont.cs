@@ -1,19 +1,16 @@
 ﻿// Adapted from Frank Luna's "Sprites and Text" example here: http://www.d3dcoder.net/resources.htm 
 // checkout his books here: http://www.d3dcoder.net/default.htm
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using SharpDX.Direct3D11;
 using SharpDX;
+using SharpDX.Direct3D11;
+using System;
 using System.Diagnostics;
 
 namespace Capture.Hook.DX11
 {
     public class DXFont : IDisposable
     {
-        Device _device;
-        DeviceContext _deviceContext;
+        private Device _device;
+        private DeviceContext _deviceContext;
 
         public DXFont(Device device, DeviceContext deviceContext)
         {
@@ -30,18 +27,17 @@ namespace Capture.Hook.DX11
 
         public void Dispose()
         {
-            if (_fontSheetTex != null)
-                _fontSheetTex.Dispose();
-            if (_fontSheetSRV != null)
-                _fontSheetSRV.Dispose();
-
+            _fontSheetTex?.Dispose();
+            _fontSheetSRV?.Dispose();
+            _device.Dispose();
+            _deviceContext.Dispose();
             _fontSheetTex = null;
             _fontSheetSRV = null;
             _device = null;
             _deviceContext = null;
         }
 
-        enum STYLE
+        private enum STYLE
         {
             STYLE_NORMAL = 0,
             STYLE_BOLD = 1,
@@ -51,15 +47,15 @@ namespace Capture.Hook.DX11
             STYLE_STRIKEOUT = 8
         };
 
-        bool _initialized;
-        const char StartChar = (char)33;
-        const char EndChar = (char)127;
-        const uint NumChars = EndChar - StartChar;
-        ShaderResourceView _fontSheetSRV;
-        Texture2D _fontSheetTex;
-        int _texWidth, _texHeight;
-        Rectangle[] _charRects = new Rectangle[NumChars];
-        int _spaceWidth, _charHeight;
+        private bool _initialized;
+        private const char StartChar = (char) 33;
+        private const char EndChar = (char) 127;
+        private const uint NumChars = EndChar - StartChar;
+        private ShaderResourceView _fontSheetSRV;
+        private Texture2D _fontSheetTex;
+        private int _texWidth, _texHeight;
+        private Rectangle[] _charRects = new Rectangle[NumChars];
+        private int _spaceWidth, _charHeight;
 
         public bool Initialize(string FontName, float FontSize, System.Drawing.FontStyle FontStyle, bool AntiAliased)
         {
@@ -68,7 +64,7 @@ namespace Capture.Hook.DX11
 
             System.Drawing.Text.TextRenderingHint hint = AntiAliased ? System.Drawing.Text.TextRenderingHint.AntiAlias : System.Drawing.Text.TextRenderingHint.SystemDefault;
 
-            int tempSize = (int)(FontSize * 2);
+            int tempSize = (int) (FontSize * 2);
             using (System.Drawing.Bitmap charBitmap = new System.Drawing.Bitmap(tempSize, tempSize, System.Drawing.Imaging.PixelFormat.Format32bppArgb))
             {
                 using (System.Drawing.Graphics charGraphics = System.Drawing.Graphics.FromImage(charBitmap))
@@ -92,8 +88,6 @@ namespace Capture.Hook.DX11
                                 return false;
                             }
                         }
-                        //System.Drawing.Bitmap bm = new System.Drawing.Bitmap(fontSheetBitmap);
-                        //bm.Save(@"C:\temp\test.png");
                     }
                 }
             }
@@ -108,12 +102,14 @@ namespace Capture.Hook.DX11
             System.Drawing.Imaging.BitmapData bmData;
 
             bmData = fontSheetBitmap.LockBits(new System.Drawing.Rectangle(0, 0, _texWidth, _texHeight), System.Drawing.Imaging.ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-            Texture2DDescription texDesc = new Texture2DDescription();
-            texDesc.Width = _texWidth;
-            texDesc.Height = _texHeight;
-            texDesc.MipLevels = 1;
-            texDesc.ArraySize = 1;
-            texDesc.Format = SharpDX.DXGI.Format.B8G8R8A8_UNorm;
+            Texture2DDescription texDesc = new Texture2DDescription
+            {
+                Width = _texWidth,
+                Height = _texHeight,
+                MipLevels = 1,
+                ArraySize = 1,
+                Format = SharpDX.DXGI.Format.B8G8R8A8_UNorm
+            };
             texDesc.SampleDescription.Count = 1;
             texDesc.SampleDescription.Quality = 0;
             texDesc.Usage = ResourceUsage.Immutable;
@@ -131,9 +127,11 @@ namespace Capture.Hook.DX11
             if (_fontSheetTex == null)
                 return false;
 
-            ShaderResourceViewDescription srvDesc = new ShaderResourceViewDescription();
-            srvDesc.Format = SharpDX.DXGI.Format.B8G8R8A8_UNorm;
-            srvDesc.Dimension = SharpDX.Direct3D.ShaderResourceViewDimension.Texture2D;
+            ShaderResourceViewDescription srvDesc = new ShaderResourceViewDescription
+            {
+                Format = SharpDX.DXGI.Format.B8G8R8A8_UNorm,
+                Dimension = SharpDX.Direct3D.ShaderResourceViewDimension.Texture2D
+            };
             srvDesc.Texture2D.MipLevels = 1;
             srvDesc.Texture2D.MostDetailedMip = 0;
 
@@ -146,28 +144,28 @@ namespace Capture.Hook.DX11
             return true;
         }
 
-        void MeasureChars(System.Drawing.Font font, System.Drawing.Graphics charGraphics)
+        private void MeasureChars(System.Drawing.Font font, System.Drawing.Graphics charGraphics)
         {
             char[] allChars = new char[NumChars];
 
-            for (char i = (char)0; i < NumChars; ++i)
-                allChars[i] = (char)(StartChar + i);
+            for (char i = (char) 0; i < NumChars; ++i)
+                allChars[i] = (char) (StartChar + i);
 
             System.Drawing.SizeF size;
-            size = charGraphics.MeasureString(new String(allChars), font, new System.Drawing.PointF(0, 0), System.Drawing.StringFormat.GenericDefault);
+            size = charGraphics.MeasureString(new string(allChars), font, new System.Drawing.PointF(0, 0), System.Drawing.StringFormat.GenericDefault);
 
-            _charHeight = (int)(size.Height + 0.5f);
+            _charHeight = (int) (size.Height + 0.5f);
 
-            int numRows = (int)(size.Width / _texWidth) + 1;
+            int numRows = (int) (size.Width / _texWidth) + 1;
             _texHeight = (numRows * _charHeight) + 1;
 
             System.Drawing.StringFormat sf = System.Drawing.StringFormat.GenericDefault;
             sf.FormatFlags |= System.Drawing.StringFormatFlags.MeasureTrailingSpaces;
             size = charGraphics.MeasureString(" ", font, 0, sf);
-            _spaceWidth = (int)(size.Width + 0.5f);
+            _spaceWidth = (int) (size.Width + 0.5f);
         }
 
-        void BuildFontSheetBitmap(System.Drawing.Font font, System.Drawing.Graphics charGraphics, System.Drawing.Bitmap charBitmap, System.Drawing.Graphics fontSheetGraphics)
+        private void BuildFontSheetBitmap(System.Drawing.Font font, System.Drawing.Graphics charGraphics, System.Drawing.Bitmap charBitmap, System.Drawing.Graphics fontSheetGraphics)
         {
             System.Drawing.Brush whiteBrush = System.Drawing.Brushes.White;
             int fontSheetX = 0;
@@ -177,7 +175,7 @@ namespace Capture.Hook.DX11
             for (int i = 0; i < NumChars; ++i)
             {
                 charGraphics.Clear(System.Drawing.Color.FromArgb(0, System.Drawing.Color.Black));
-                charGraphics.DrawString(((char)(StartChar + i)).ToString(), font, whiteBrush, new System.Drawing.PointF(0.0f, 0.0f));
+                charGraphics.DrawString(((char) (StartChar + i)).ToString(), font, whiteBrush, new System.Drawing.PointF(0.0f, 0.0f));
 
                 int minX = GetCharMinX(charBitmap);
                 int maxX = GetCharMaxX(charBitmap);
@@ -186,7 +184,7 @@ namespace Capture.Hook.DX11
                 if (fontSheetX + charWidth >= _texWidth)
                 {
                     fontSheetX = 0;
-                    fontSheetY += (int)(_charHeight) + 1;
+                    fontSheetY += _charHeight + 1;
                 }
 
                 _charRects[i] = new Rectangle(fontSheetX, fontSheetY, charWidth, _charHeight);
@@ -264,7 +262,6 @@ namespace Capture.Hook.DX11
 
             return _charHeight;
         }
-
     }
 }
 

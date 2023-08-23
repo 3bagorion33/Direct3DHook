@@ -1,21 +1,19 @@
 ﻿using Capture.Interface;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Capture.Hook.Common
 {
     [Serializable]
-    public class ImageElement: Element
+    public class ImageElement : Element
     {
         /// <summary>
         /// The image file bytes
         /// </summary>
         public virtual byte[] Image { get; set; }
 
-        System.Drawing.Bitmap _bitmap = null;
-        internal virtual System.Drawing.Bitmap Bitmap {
+        private System.Drawing.Bitmap _bitmap = null;
+        internal virtual System.Drawing.Bitmap Bitmap
+        {
             get
             {
                 if (_bitmap == null && Image != null)
@@ -26,7 +24,7 @@ namespace Capture.Hook.Common
 
                 return _bitmap;
             }
-            set { _bitmap = value; }
+            set => _bitmap = value;
         }
 
         /// <summary>
@@ -36,7 +34,7 @@ namespace Capture.Hook.Common
         /// Defaults to <see cref="System.Drawing.Color.White"/>.
         /// </remarks>
         public virtual System.Drawing.Color Tint { get; set; } = System.Drawing.Color.White;
-        
+
         /// <summary>
         /// The location of where to render this image element
         /// </summary>
@@ -48,11 +46,11 @@ namespace Capture.Hook.Common
 
         public string Filename { get; set; }
 
-        bool _ownsBitmap = false;
+        private bool _ownsBitmap = false;
 
         public ImageElement() { }
 
-        public ImageElement(string filename):
+        public ImageElement(string filename) :
             this(new System.Drawing.Bitmap(filename), true)
         {
             Filename = filename;
@@ -61,7 +59,7 @@ namespace Capture.Hook.Common
         public ImageElement(System.Drawing.Bitmap bitmap, bool ownsImage = false)
         {
             Tint = System.Drawing.Color.White;
-            this.Bitmap = bitmap;
+            Bitmap = bitmap;
             _ownsBitmap = ownsImage;
             Scale = 1.0f;
         }
@@ -74,8 +72,8 @@ namespace Capture.Hook.Common
             {
                 if (_ownsBitmap)
                 {
-                    SafeDispose(this.Bitmap);
-                    this.Bitmap = null;
+                    Bitmap?.Dispose();
+                    Bitmap = null;
                 }
             }
         }

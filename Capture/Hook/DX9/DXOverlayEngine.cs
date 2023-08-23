@@ -1,13 +1,9 @@
 ﻿using Capture.Hook.Common;
 using SharpDX;
 using SharpDX.Direct3D9;
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
 
 namespace Capture.Hook.DX9
 {
@@ -15,15 +11,14 @@ namespace Capture.Hook.DX9
     {
         public List<IOverlay> Overlays { get; set; }
 
-        bool _initialised = false;
-        bool _initialising = false;
+        private bool _initialised = false;
+        private bool _initialising = false;
+        private Device _device;
+        private Sprite _sprite;
+        private Dictionary<string, Font> _fontCache = new Dictionary<string, Font>();
+        private Dictionary<Element, Texture> _imageCache = new Dictionary<Element, Texture>();
 
-        Device _device;
-        Sprite _sprite;
-        Dictionary<string, Font> _fontCache = new Dictionary<string, Font>();
-        Dictionary<Element, Texture> _imageCache = new Dictionary<Element, Texture>();
-
-        public Device Device { get { return _device; } }
+        public Device Device => _device;
 
         public DXOverlayEngine()
         {
@@ -110,7 +105,7 @@ namespace Capture.Hook.DX9
                     if (textElement != null)
                     {
                         Font font = GetFontForTextElement(textElement);
-                        if (font != null && !String.IsNullOrEmpty(textElement.Text))
+                        if (font != null && !string.IsNullOrEmpty(textElement.Text))
                             font.DrawText(_sprite, textElement.Text, textElement.Location.X, textElement.Location.Y, new SharpDX.ColorBGRA(textElement.Color.R, textElement.Color.G, textElement.Color.B, textElement.Color.A));
                     }
                     else if (imageElement != null)
@@ -147,38 +142,38 @@ namespace Capture.Hook.DX9
             {
                 foreach (var item in _fontCache)
                     item.Value.OnLostDevice();
-                
-                if (_sprite != null)
-                    _sprite.OnLostDevice();
+
+                _sprite?.OnLostDevice();
             }
             catch { }
         }
 
-        Font GetFontForTextElement(TextElement element)
+        private Font GetFontForTextElement(TextElement element)
         {
             Font result = null;
 
-            string fontKey = String.Format("{0}{1}{2}{3}", element.Font.Name, element.Font.Size, element.Font.Style, element.AntiAliased);
+            string fontKey = string.Format("{0}{1}{2}{3}", element.Font.Name, element.Font.Size, element.Font.Style, element.AntiAliased);
 
             if (!_fontCache.TryGetValue(fontKey, out result))
             {
-                result = ToDispose(new Font(_device, new FontDescription { 
+                result = ToDispose(new Font(_device, new FontDescription
+                {
                     FaceName = element.Font.Name,
                     Italic = (element.Font.Style & System.Drawing.FontStyle.Italic) == System.Drawing.FontStyle.Italic,
-                    Quality = (element.AntiAliased ? FontQuality.Antialiased : FontQuality.Default),
+                    Quality = element.AntiAliased ? FontQuality.Antialiased : FontQuality.Default,
                     Weight = ((element.Font.Style & System.Drawing.FontStyle.Bold) == System.Drawing.FontStyle.Bold) ? FontWeight.Bold : FontWeight.Normal,
-                    Height = (int)element.Font.SizeInPoints
+                    Height = (int) element.Font.SizeInPoints
                 }));
                 _fontCache[fontKey] = result;
             }
             return result;
         }
 
-        Texture GetImageForImageElement(ImageElement element)
+        private Texture GetImageForImageElement(ImageElement element)
         {
             Texture result = null;
 
-            if (!String.IsNullOrEmpty(element.Filename))
+            if (!string.IsNullOrEmpty(element.Filename))
             {
                 if (!_imageCache.TryGetValue(element, out result))
                 {
@@ -207,19 +202,13 @@ namespace Capture.Hook.DX9
         /// <param name="disposing">true if disposing both unmanaged and managed</param>
         protected override void Dispose(bool disposing)
         {
-            if (true)
+            if (disposing) // was true
             {
+                _device.Dispose();
                 _device = null;
             }
 
             base.Dispose(disposing);
         }
-
-        void SafeDispose(DisposeBase disposableObj)
-        {
-            if (disposableObj != null)
-                disposableObj.Dispose();
-        }
-
     }
 }

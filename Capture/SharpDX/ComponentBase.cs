@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SharpDX
 {
@@ -31,9 +27,7 @@ namespace SharpDX
         /// <summary>
         /// Initializes a new instance of the <see cref="ComponentBase" /> class with a mutable name.
         /// </summary>
-        protected ComponentBase()
-        {
-        }
+        protected ComponentBase() { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ComponentBase" /> class with an immutable name.
@@ -44,7 +38,7 @@ namespace SharpDX
             if (name != null)
             {
                 this.name = name;
-                this.isNameImmutable = true;
+                isNameImmutable = true;
             }
         }
 
@@ -55,7 +49,7 @@ namespace SharpDX
         [DefaultValue(null)]
         public string Name
         {
-            get { return name; }
+            get => name;
             set
             {
                 if (isNameImmutable)
@@ -76,10 +70,7 @@ namespace SharpDX
         [DefaultValue(null)]
         public object Tag
         {
-            get
-            {
-                return tag;
-            }
+            get => tag;
             set
             {
                 if (ReferenceEquals(tag, value)) return;
@@ -95,11 +86,7 @@ namespace SharpDX
 
         protected virtual void OnPropertyChanged(string propertyName)
         {
-            PropertyChangedEventHandler handler = PropertyChanged;
-            if (handler != null)
-            {
-                handler(this, new PropertyChangedEventArgs(propertyName));
-            }
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

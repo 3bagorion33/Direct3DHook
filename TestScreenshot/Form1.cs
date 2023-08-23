@@ -1,17 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
 using System.Windows.Forms;
 using System.Diagnostics;
 using System.Threading;
 using EasyHook;
-using System.Runtime.Remoting.Channels.Ipc;
-using System.Runtime.Remoting;
-using System.Runtime.InteropServices;
 using System.IO;
 using Capture.Interface;
 using Capture.Hook;
@@ -54,7 +47,8 @@ namespace TestScreenshot
             else
             {
                 HookManager.RemoveHookedProcess(_captureProcess.Process.Id);
-                _captureProcess.CaptureInterface.Disconnect();
+                _captureProcess.CaptureInterface.Dispose();
+                _captureProcess.Dispose();
                 _captureProcess = null;
             }
 

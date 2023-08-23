@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Runtime.InteropServices;
 
 namespace Capture
@@ -17,7 +14,7 @@ namespace Capture
         }
 
         #region kernel32
-        
+
         [DllImport("kernel32.dll")]
         public static extern IntPtr GetModuleHandle(string lpModuleName);
 
@@ -127,7 +124,7 @@ namespace Capture
             ForceMinimized = 11
         }
         #endregion
-        
+
         /// <summary>
         /// The GetForegroundWindow function returns a handle to the foreground window.
         /// </summary>

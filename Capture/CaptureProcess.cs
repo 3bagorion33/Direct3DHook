@@ -1,20 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using Capture.Hook;
+using Capture.Interface;
 using EasyHook;
+using System;
+using System.Diagnostics;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels.Ipc;
-using System.IO;
-using Capture.Interface;
-using System.Diagnostics;
 using System.Threading;
-using Capture.Hook;
-using System.Security.Principal;
-using System.Security.Cryptography;
-using System.Security.AccessControl;
-using System.Runtime.Remoting.Channels;
-using System.Runtime.Serialization.Formatters;
 
 namespace Capture
 {
@@ -23,7 +14,7 @@ namespace Capture
         /// <summary>
         /// Must be null to allow a random channel name to be generated
         /// </summary>
-        string _channelName = null;
+        private string _channelName = null;
         private IpcServerChannel _screenshotServer;
         private CaptureInterface _serverInterface;
         public Process Process { get; set; }
@@ -52,7 +43,6 @@ namespace Capture
 
             captureInterface.ProcessId = process.Id;
             _serverInterface = captureInterface;
-            //_serverInterface = new CaptureInterface() { ProcessId = process.Id };
 
             // Initialise the IPC server (with our instance of _serverInterface)
             _screenshotServer = RemoteHooking.IpcCreateServer<CaptureInterface>(
@@ -66,9 +56,9 @@ namespace Capture
                 RemoteHooking.Inject(
                     process.Id,
                     InjectionOptions.Default,
-                    typeof(CaptureInterface).Assembly.Location,//"Capture.dll", // 32-bit version (the same because AnyCPU) could use different assembly that links to 32-bit C++ helper dll
+                    typeof(CaptureInterface).Assembly.Location, //"Capture.dll", // 32-bit version (the same because AnyCPU) could use different assembly that links to 32-bit C++ helper dll
                     typeof(CaptureInterface).Assembly.Location, //"Capture.dll", // 64-bit version (the same because AnyCPU) could use different assembly that links to 64-bit C++ helper dll
-                    // the optional parameter list...
+                                                                // the optional parameter list...
                     _channelName, // The name of the IPC channel for the injected assembly to connect to
                     config
                 );
@@ -91,16 +81,12 @@ namespace Capture
             BringProcessWindowToFront();
         }
 
-        public CaptureInterface CaptureInterface
-        {
-            get { return _serverInterface; }
-        }
+        public CaptureInterface CaptureInterface => _serverInterface;
 
         ~CaptureProcess()
         {
             Dispose(false);
         }
-
 
         #region Private methods
 
@@ -110,9 +96,9 @@ namespace Capture
         /// <remarks>If the window does not come to the front within approx. 30 seconds an exception is raised</remarks>
         public void BringProcessWindowToFront()
         {
-            if (this.Process == null)
+            if (Process == null)
                 return;
-            IntPtr handle = this.Process.MainWindowHandle;
+            IntPtr handle = Process.MainWindowHandle;
             int i = 0;
 
             while (!NativeMethods.IsWindowInForeground(handle))
@@ -170,7 +156,7 @@ namespace Capture
                 if (disposing)
                 {
                     // Disconnect the IPC (which causes the remote entry point to exit)
-                    _serverInterface.Disconnect();
+                    _serverInterface.Dispose();
                 }
 
                 _disposed = true;

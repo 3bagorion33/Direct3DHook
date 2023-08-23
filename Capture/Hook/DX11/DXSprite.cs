@@ -1,13 +1,11 @@
 ﻿// Adapted from Frank Luna's "Sprites and Text" example here: http://www.d3dcoder.net/resources.htm 
 // checkout his books here: http://www.d3dcoder.net/default.htm
+using SharpDX;
+using SharpDX.D3DCompiler;
+using SharpDX.Direct3D11;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using SharpDX.Direct3D11;
-using SharpDX;
 using System.Diagnostics;
-using SharpDX.D3DCompiler;
 using System.Runtime.InteropServices;
 
 namespace Capture.Hook.DX11
@@ -15,8 +13,8 @@ namespace Capture.Hook.DX11
 
     public class DXSprite : Component
     {
-        Device _device;
-        DeviceContext _deviceContext;
+        private Device _device;
+        private DeviceContext _deviceContext;
 
         public DXSprite(Device device, DeviceContext deviceContext)
         {
@@ -53,23 +51,22 @@ namespace Capture.Hook.DX11
             }
         }
 
-        bool _initialized;
-        BlendState _transparentBS;
-        EffectTechnique _spriteTech;
-        EffectShaderResourceVariable _spriteMap;
-        ShaderResourceView _batchTexSRV;
-        InputLayout _inputLayout;
-        SharpDX.Direct3D11.Buffer _VB;
-        SharpDX.Direct3D11.Buffer _IB;
-        int _texWidth;
-        int _texHeight;
-        List<Sprite> _spriteList = new List<Sprite>(128);
-        float _screenWidth;
-        float _screenHeight;
-        CompilationResult _compiledFX;
-        Effect _effect;
-
-        SafeHGlobal _indexBuffer = null;
+        private bool _initialized;
+        private BlendState _transparentBS;
+        private EffectTechnique _spriteTech;
+        private EffectShaderResourceVariable _spriteMap;
+        private ShaderResourceView _batchTexSRV;
+        private InputLayout _inputLayout;
+        private SharpDX.Direct3D11.Buffer _VB;
+        private SharpDX.Direct3D11.Buffer _IB;
+        private int _texWidth;
+        private int _texHeight;
+        private List<Sprite> _spriteList = new List<Sprite>(128);
+        private float _screenWidth;
+        private float _screenHeight;
+        private CompilationResult _compiledFX;
+        private Effect _effect;
+        private SafeHGlobal _indexBuffer = null;
         public bool Initialize()
         {
             Debug.Assert(!_initialized);
@@ -114,7 +111,7 @@ technique11 SpriteTech {
 
             _compiledFX = ToDispose(ShaderBytecode.Compile(SpriteFX, "SpriteTech", "fx_5_0"));
             {
-                
+
                 if (_compiledFX.HasErrors)
                     return false;
 
@@ -152,12 +149,12 @@ technique11 SpriteTech {
 
                     for (ushort i = 0; i < 512; ++i)
                     {
-                        indices[i * 6] = (short)(i * 4);
-                        indices[i * 6 + 1] = (short)(i * 4 + 1);
-                        indices[i * 6 + 2] = (short)(i * 4 + 2);
-                        indices[i * 6 + 3] = (short)(i * 4);
-                        indices[i * 6 + 4] = (short)(i * 4 + 2);
-                        indices[i * 6 + 5] = (short)(i * 4 + 3);
+                        indices[i * 6] = (short) (i * 4);
+                        indices[(i * 6) + 1] = (short) ((i * 4) + 1);
+                        indices[(i * 6) + 2] = (short) ((i * 4) + 2);
+                        indices[(i * 6) + 3] = (short) (i * 4);
+                        indices[(i * 6) + 4] = (short) ((i * 4) + 2);
+                        indices[(i * 6) + 5] = (short) ((i * 4) + 3);
                     }
 
                     _indexBuffer = ToDispose(new SafeHGlobal(indices.Length * Marshal.SizeOf(indices[0])));
@@ -172,7 +169,7 @@ technique11 SpriteTech {
                         OptionFlags = ResourceOptionFlags.None,
                         StructureByteStride = 0
                     };
-                    
+
                     _IB = ToDispose(new SharpDX.Direct3D11.Buffer(_device, _indexBuffer.DangerousGetHandle(), ibd));
 
                     BlendStateDescription transparentDesc = new BlendStateDescription()
@@ -200,7 +197,7 @@ technique11 SpriteTech {
 
         internal static Color4 ToColor4(System.Drawing.Color color)
         {
-            Vector4 Vec = new Vector4(color.R > 0 ? (float)(color.R / 255.0f) : 0.0f, color.G > 0 ? (float)(color.G / 255.0f) : 0.0f, color.B > 0 ? (float)(color.B / 255.0f) : 0.0f, color.A > 0 ? (float)(color.A / 255.0f) : 0.0f);
+            Vector4 Vec = new Vector4(color.R > 0 ? (float) (color.R / 255.0f) : 0.0f, color.G > 0 ? (float) (color.G / 255.0f) : 0.0f, color.B > 0 ? (float) (color.B / 255.0f) : 0.0f, color.A > 0 ? (float) (color.A / 255.0f) : 0.0f);
             return new Color4(Vec);
         }
 
@@ -217,7 +214,7 @@ technique11 SpriteTech {
 
                 BeginBatch(image.GetSRV());
 
-                Draw(new Rectangle(x, y, (int)(scale * image.Width), (int)(scale * image.Height)), new Rectangle(0, 0, image.Width, image.Height), color.HasValue ? ToColor4(color.Value) : Color4.White, 1.0f, angle);
+                Draw(new Rectangle(x, y, (int) (scale * image.Width), (int) (scale * image.Height)), new Rectangle(0, 0, image.Width, image.Height), color.HasValue ? ToColor4(color.Value) : Color4.White, 1.0f, angle);
 
                 EndBatch();
                 _deviceContext.OutputMerger.SetBlendState(backupBlendState, backupBlendFactor, backupMask);
@@ -324,6 +321,7 @@ technique11 SpriteTech {
                     }
                 }
             }
+            _batchTexSRV?.Dispose();
             _batchTexSRV = null;
         }
 
@@ -343,14 +341,14 @@ technique11 SpriteTech {
             _spriteList.Add(sprite);
         }
 
-        void DrawBatch(int startSpriteIndex, int spriteCount)
+        private void DrawBatch(int startSpriteIndex, int spriteCount)
         {
             DataBox mappedData = _deviceContext.MapSubresource(_VB, 0, MapMode.WriteDiscard, MapFlags.None);
 
             // Update the vertices
             unsafe
             {
-                SpriteVertex* v = (SpriteVertex*)mappedData.DataPointer.ToPointer();
+                SpriteVertex* v = (SpriteVertex*) mappedData.DataPointer.ToPointer();
 
                 for (int i = 0; i < spriteCount; ++i)
                 {
@@ -361,9 +359,9 @@ technique11 SpriteTech {
                     BuildSpriteQuad(sprite, ref quad);
 
                     v[i * 4] = quad[0];
-                    v[i * 4 + 1] = quad[1];
-                    v[i * 4 + 2] = quad[2];
-                    v[i * 4 + 3] = quad[3];
+                    v[(i * 4) + 1] = quad[1];
+                    v[(i * 4) + 2] = quad[2];
+                    v[(i * 4) + 3] = quad[3];
                 }
             }
 
@@ -372,18 +370,18 @@ technique11 SpriteTech {
             _deviceContext.DrawIndexed(spriteCount * 6, 0, 0);
         }
 
-        Vector3 PointToNdc(int x, int y, float z)
+        private Vector3 PointToNdc(int x, int y, float z)
         {
             Vector3 p;
 
-            p.X = 2.0f * (float)x / _screenWidth - 1.0f;
-            p.Y = 1.0f - 2.0f * (float)y / _screenHeight;
+            p.X = (2.0f * x / _screenWidth) - 1.0f;
+            p.Y = 1.0f - (2.0f * y / _screenHeight);
             p.Z = z;
 
             return p;
         }
 
-        void BuildSpriteQuad(Sprite sprite, ref SpriteVertex[] v)
+        private void BuildSpriteQuad(Sprite sprite, ref SpriteVertex[] v)
         {
             if (v.Length < 4)
                 throw new ArgumentException("must have 4 sprite vertices", "v");
@@ -396,10 +394,10 @@ technique11 SpriteTech {
             v[2].Pos = PointToNdc(dest.Right, dest.Top, sprite.Z);
             v[3].Pos = PointToNdc(dest.Right, dest.Bottom, sprite.Z);
 
-            v[0].Tex = new Vector2((float)src.Left / _texWidth, (float)src.Bottom / _texHeight);
-            v[1].Tex = new Vector2((float)src.Left / _texWidth, (float)src.Top / _texHeight);
-            v[2].Tex = new Vector2((float)src.Right / _texWidth, (float)src.Top / _texHeight);
-            v[3].Tex = new Vector2((float)src.Right / _texWidth, (float)src.Bottom / _texHeight);
+            v[0].Tex = new Vector2((float) src.Left / _texWidth, (float) src.Bottom / _texHeight);
+            v[1].Tex = new Vector2((float) src.Left / _texWidth, (float) src.Top / _texHeight);
+            v[2].Tex = new Vector2((float) src.Right / _texWidth, (float) src.Top / _texHeight);
+            v[3].Tex = new Vector2((float) src.Right / _texWidth, (float) src.Bottom / _texHeight);
 
             v[0].Color = sprite.Color;
             v[1].Color = sprite.Color;

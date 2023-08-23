@@ -1,29 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Runtime.InteropServices;
+﻿using Capture.Interface;
 using EasyHook;
-using System.IO;
-using System.Runtime.Remoting;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.Diagnostics;
-using Capture.Interface;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Runtime.Remoting;
 using System.Threading;
 
 namespace Capture.Hook
 {
-    internal abstract class BaseDXHook: SharpDX.Component, IDXHook
+    internal abstract class BaseDXHook : SharpDX.Component, IDXHook
     {
         protected readonly ClientCaptureInterfaceEventProxy InterfaceEventProxy = new ClientCaptureInterfaceEventProxy();
 
         public BaseDXHook(CaptureInterface ssInterface)
         {
-            this.Interface = ssInterface;
-            this.Timer = new Stopwatch();
-            this.Timer.Start();
-            this.FPS = new FramesPerSecond();
+            Interface = ssInterface;
+            Timer = new Stopwatch();
+            Timer.Start();
+            FPS = new FramesPerSecond();
 
             Interface.ScreenshotRequested += InterfaceEventProxy.ScreenshotRequestedProxyHandler;
             Interface.DisplayText += InterfaceEventProxy.DisplayTextProxyHandler;
@@ -38,7 +36,7 @@ namespace Capture.Hook
             Dispose(false);
         }
 
-        void InterfaceEventProxy_DisplayText(DisplayTextEventArgs args)
+        private void InterfaceEventProxy_DisplayText(DisplayTextEventArgs args)
         {
             TextDisplay = new TextDisplay()
             {
@@ -49,8 +47,8 @@ namespace Capture.Hook
 
         protected virtual void InterfaceEventProxy_ScreenshotRequested(ScreenshotRequest request)
         {
-            
-            this.Request = request;
+
+            Request = request;
         }
 
         private void InterfaceEventProxy_DrawOverlay(DrawOverlayEventArgs args)
@@ -71,10 +69,10 @@ namespace Capture.Hook
         protected TextDisplay TextDisplay { get; set; }
 
         protected List<Common.IOverlay> Overlays { get; set; }
- 
+
         protected bool IsOverlayUpdatePending { get; set; }
 
-        int _processId = 0;
+        private int _processId = 0;
         protected int ProcessId
         {
             get
@@ -87,18 +85,12 @@ namespace Capture.Hook
             }
         }
 
-        protected virtual string HookName
-        {
-            get
-            {
-                return "BaseDXHook";
-            }
-        }
+        protected virtual string HookName => "BaseDXHook";
 
         protected void Frame()
         {
             FPS.Frame();
-            if (TextDisplay != null && TextDisplay.Display) 
+            if (TextDisplay != null && TextDisplay.Display)
                 TextDisplay.Frame();
         }
 
@@ -161,7 +153,7 @@ namespace Capture.Hook
         {
             if (stream is MemoryStream)
             {
-                return ((MemoryStream)stream).ToArray();
+                return ((MemoryStream) stream).ToArray();
             }
             else
             {
@@ -222,7 +214,7 @@ namespace Capture.Hook
                     Stride = pitch
                 };
             }
-            else 
+            else
             {
                 // Return an image
                 using (var bm = data.ToBitmap(width, height, pitch, format))
@@ -249,6 +241,7 @@ namespace Capture.Hook
 
             // Send the response
             SendResponse(response);
+            request.Dispose();
         }
 
         protected void SendResponse(Screenshot response)
@@ -264,6 +257,7 @@ namespace Capture.Hook
                 {
                     // Ignore remoting exceptions
                     // .NET Remoting will throw an exception if the host application is unreachable
+                    response.Dispose();
                 }
                 catch (Exception e)
                 {
@@ -299,6 +293,10 @@ namespace Capture.Hook
             {
                 DebugMessage(e.ToString());
             }
+            finally
+            {
+                request.Dispose();
+            }
         }
 
 
@@ -320,7 +318,7 @@ namespace Capture.Hook
         {
             using (MemoryStream ms = new MemoryStream(bitmapData))
             {
-                return (Bitmap)Image.FromStream(ms);
+                return (Bitmap) Image.FromStream(ms);
             }
         }
 
@@ -330,13 +328,7 @@ namespace Capture.Hook
             set;
         }
 
-        protected bool CaptureThisFrame
-        {
-            get
-            {
-                return ((Timer.Elapsed - LastCaptureTime) > CaptureDelay) || Request != null;
-            }
-        }
+        protected bool CaptureThisFrame => ((Timer.Elapsed - LastCaptureTime) > CaptureDelay) || Request != null;
         protected TimeSpan CaptureDelay { get; set; }
 
         #region IDXHook Members
@@ -346,23 +338,23 @@ namespace Capture.Hook
             get;
             set;
         }
-        
+
         private CaptureConfig _config;
         public CaptureConfig Config
         {
-            get { return _config; }
+            get => _config;
             set
             {
                 _config = value;
-                CaptureDelay = new TimeSpan(0, 0, 0, 0, (int)((1.0 / (double)_config.TargetFramesPerSecond) * 1000.0));
+                CaptureDelay = new TimeSpan(0, 0, 0, 0, (int) (1.0 / _config.TargetFramesPerSecond * 1000.0));
             }
         }
 
         private ScreenshotRequest _request;
         public ScreenshotRequest Request
         {
-            get { return _request; }
-            set { Interlocked.Exchange(ref _request, value);  }
+            get => _request;
+            set => Interlocked.Exchange(ref _request, value);
         }
 
         protected List<Hook> Hooks = new List<Hook>();
@@ -382,6 +374,7 @@ namespace Capture.Hook
                 try
                 {
                     Cleanup();
+                    InterfaceEventProxy.Dispose();
                 }
                 catch { }
 

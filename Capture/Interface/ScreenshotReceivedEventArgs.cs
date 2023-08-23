@@ -3,12 +3,12 @@
 namespace Capture.Interface
 {
     [Serializable]
-    public class ScreenshotReceivedEventArgs: MarshalByRefObject
+    public class ScreenshotReceivedEventArgs//: CrossAppDomainObject
     {
-        public Int32 ProcessId { get; set; }
+        public int ProcessId { get; set; }
         public Screenshot Screenshot { get; set; }
 
-        public ScreenshotReceivedEventArgs(Int32 processId, Screenshot screenshot)
+        public ScreenshotReceivedEventArgs(int processId, Screenshot screenshot)
         {
             ProcessId = processId;
             Screenshot = screenshot;

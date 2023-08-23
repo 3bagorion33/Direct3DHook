@@ -1,29 +1,20 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Capture.Hook.Common
 {
     [Serializable]
-    public class FramesPerSecond: TextElement
+    public class FramesPerSecond : TextElement
     {
-        string _fpsFormat = "{0:N0} fps";
+        private string _fpsFormat = "{0:N0} fps";
         public override string Text
         {
-            get
-            {
-                return String.Format(_fpsFormat, GetFPS());
-            }
-            set
-            {
-                _fpsFormat = value;
-            }
+            get => string.Format(_fpsFormat, GetFPS());
+            set => _fpsFormat = value;
         }
 
-        int _frames = 0;
-        int _lastTickCount = 0;
-        float _lastFrameRate = 0;
+        private int _frames = 0;
+        private int _lastTickCount = 0;
+        private float _lastFrameRate = 0;
 
         public FramesPerSecond(System.Drawing.Font font)
             : base(font)
@@ -38,7 +29,7 @@ namespace Capture.Hook.Common
             _frames++;
             if (Math.Abs(Environment.TickCount - _lastTickCount) > 1000)
             {
-                _lastFrameRate = (float)_frames * 1000 / Math.Abs(Environment.TickCount - _lastTickCount);
+                _lastFrameRate = (float) _frames * 1000 / Math.Abs(Environment.TickCount - _lastTickCount);
                 _lastTickCount = Environment.TickCount;
                 _frames = 0;
             }

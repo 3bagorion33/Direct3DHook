@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Capture.Interface;
+﻿using Capture.Interface;
+using System;
 
 namespace Capture.Hook
 {
-    internal interface IDXHook: IDisposable
+    internal interface IDXHook : IDisposable
     {
         CaptureInterface Interface
         {

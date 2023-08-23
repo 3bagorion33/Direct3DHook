@@ -1,7 +1,7 @@
-﻿using System;
+﻿using Capture.Hook.Common;
+using System;
 using System.Drawing;
 using System.Threading;
-using Capture.Hook.Common;
 
 namespace Capture.Interface
 {
@@ -23,7 +23,7 @@ namespace Capture.Interface
     public delegate void DrawOverlayEvent(DrawOverlayEventArgs args);
 
     [Serializable]
-    public class CaptureInterface : MarshalByRefObject
+    public class CaptureInterface : CrossAppDomainObject
     {
         /// <summary>
         /// The client process Id
@@ -33,21 +33,21 @@ namespace Capture.Interface
         #region Events
 
         #region Server-side Events
-        
+
         /// <summary>
         /// Server event for sending debug and error information from the client to server
         /// </summary>
         public event MessageReceivedEvent RemoteMessage;
-        
+
         /// <summary>
         /// Server event for receiving screenshot image data
         /// </summary>
         public event ScreenshotReceivedEvent ScreenshotReceived;
-        
+
         #endregion
 
         #region Client-side Events
-        
+
         /// <summary>
         /// Client event used to communicate to the client that it is time to start recording
         /// </summary>
@@ -72,7 +72,7 @@ namespace Capture.Interface
         /// Client event used to display a piece of text in-game
         /// </summary>
         public event DisplayTextEvent DisplayText;
-        
+
         /// <summary>
         ///     Client event used to (re-)draw an overlay in-game.
         /// </summary>
@@ -117,10 +117,10 @@ namespace Capture.Interface
 
         #region Still image Capture
 
-        object _lock = new object();
-        Guid? _requestId = null;
-        Action<Screenshot> _completeScreenshot = null;
-        ManualResetEvent _wait = new ManualResetEvent(false);
+        private object _lock = new object();
+        private Guid? _requestId = null;
+        private Action<Screenshot> _completeScreenshot = null;
+        private ManualResetEvent _wait = new ManualResetEvent(false);
 
         /// <summary>
         /// Get a fullscreen screenshot with the default timeout of 2 seconds
@@ -141,6 +141,7 @@ namespace Capture.Interface
             {
                 Screenshot result = null;
                 _requestId = Guid.NewGuid();
+
                 _wait.Reset();
 
                 SafeInvokeScreenshotRequested(new ScreenshotRequest(_requestId.Value, region)
@@ -159,7 +160,7 @@ namespace Capture.Interface
                     {
                     }
                     _wait.Set();
-                        
+
                 };
 
                 _wait.WaitOne(timeout);
@@ -171,29 +172,21 @@ namespace Capture.Interface
         public IAsyncResult BeginGetScreenshot(Rectangle region, TimeSpan timeout, AsyncCallback callback = null, Size? resize = null, ImageFormat format = ImageFormat.Bitmap)
         {
             Func<Rectangle, TimeSpan, Size?, ImageFormat, Screenshot> getScreenshot = GetScreenshot;
-            
+
             return getScreenshot.BeginInvoke(region, timeout, resize, format, callback, getScreenshot);
         }
 
         public Screenshot EndGetScreenshot(IAsyncResult result)
         {
             Func<Rectangle, TimeSpan, Size?, ImageFormat, Screenshot> getScreenshot = result.AsyncState as Func<Rectangle, TimeSpan, Size?, ImageFormat, Screenshot>;
-            if (getScreenshot != null)
-            {
-                return getScreenshot.EndInvoke(result);
-            }
-            else
-                return null;
+            return getScreenshot?.EndInvoke(result);
         }
 
         public void SendScreenshotResponse(Screenshot screenshot)
         {
             if (_requestId != null && screenshot != null && screenshot.RequestId == _requestId.Value)
             {
-                if (_completeScreenshot != null)
-                {
-                    _completeScreenshot(screenshot);
-                }
+                _completeScreenshot?.Invoke(screenshot);
             }
         }
 
@@ -202,9 +195,10 @@ namespace Capture.Interface
         /// <summary>
         /// Tell the client process to disconnect
         /// </summary>
-        public void Disconnect()
+        protected override void Disconnect()
         {
             SafeInvokeDisconnected();
+            base.Disconnect();
         }
 
         /// <summary>
@@ -215,7 +209,7 @@ namespace Capture.Interface
         /// <param name="args"></param>
         public void Message(MessageType messageType, string format, params object[] args)
         {
-            Message(messageType, String.Format(format, args));
+            Message(messageType, string.Format(format, args));
         }
 
         public void Message(MessageType messageType, string message)
@@ -274,7 +268,7 @@ namespace Capture.Interface
             {
                 try
                 {
-                    listener = (RecordingStartedEvent)del;
+                    listener = (RecordingStartedEvent) del;
                     listener.Invoke(config);
                 }
                 catch (Exception)
@@ -298,7 +292,7 @@ namespace Capture.Interface
             {
                 try
                 {
-                    listener = (RecordingStoppedEvent)del;
+                    listener = (RecordingStoppedEvent) del;
                     listener.Invoke();
                 }
                 catch (Exception)
@@ -322,7 +316,7 @@ namespace Capture.Interface
             {
                 try
                 {
-                    listener = (MessageReceivedEvent)del;
+                    listener = (MessageReceivedEvent) del;
                     listener.Invoke(eventArgs);
                 }
                 catch (Exception)
@@ -346,7 +340,7 @@ namespace Capture.Interface
             {
                 try
                 {
-                    listener = (ScreenshotRequestedEvent)del;
+                    listener = (ScreenshotRequestedEvent) del;
                     listener.Invoke(eventArgs);
                 }
                 catch (Exception)
@@ -370,7 +364,7 @@ namespace Capture.Interface
             {
                 try
                 {
-                    listener = (ScreenshotReceivedEvent)del;
+                    listener = (ScreenshotReceivedEvent) del;
                     listener.Invoke(eventArgs);
                 }
                 catch (Exception)
@@ -394,7 +388,7 @@ namespace Capture.Interface
             {
                 try
                 {
-                    listener = (DisconnectedEvent)del;
+                    listener = (DisconnectedEvent) del;
                     listener.Invoke();
                 }
                 catch (Exception)
@@ -418,7 +412,7 @@ namespace Capture.Interface
             {
                 try
                 {
-                    listener = (DisplayTextEvent)del;
+                    listener = (DisplayTextEvent) del;
                     listener.Invoke(displayTextEventArgs);
                 }
                 catch (Exception)
@@ -442,7 +436,7 @@ namespace Capture.Interface
             {
                 try
                 {
-                    listener = (DrawOverlayEvent)del;
+                    listener = (DrawOverlayEvent) del;
                     listener.Invoke(drawOverlayEventArgs);
                 }
                 catch (Exception)
@@ -469,7 +463,7 @@ namespace Capture.Interface
     /// <summary>
     /// Client event proxy for marshalling event handlers
     /// </summary>
-    public class ClientCaptureInterfaceEventProxy : MarshalByRefObject
+    public class ClientCaptureInterfaceEventProxy : CrossAppDomainObject
     {
         #region Event Declarations
 
@@ -504,53 +498,29 @@ namespace Capture.Interface
         public event DrawOverlayEvent DrawOverlay;
 
         #endregion
-
-        #region Lifetime Services
-
-        public override object InitializeLifetimeService()
-        {
-            //Returning null holds the object alive
-            //until it is explicitly destroyed
-            return null;
-        }
-
-        #endregion
-
         public void RecordingStartedProxyHandler(CaptureConfig config)
         {
-            if (RecordingStarted != null)
-                RecordingStarted(config);
+            RecordingStarted?.Invoke(config);
         }
-
         public void RecordingStoppedProxyHandler()
         {
-            if (RecordingStopped != null)
-                RecordingStopped();
+            RecordingStopped?.Invoke();
         }
-
-
         public void DisconnectedProxyHandler()
         {
-            if (Disconnected != null)
-                Disconnected();
+            Disconnected?.Invoke();
         }
-
         public void ScreenshotRequestedProxyHandler(ScreenshotRequest request)
         {
-            if (ScreenshotRequested != null)
-                ScreenshotRequested(request);
+            ScreenshotRequested?.Invoke(request);
         }
-
         public void DisplayTextProxyHandler(DisplayTextEventArgs args)
         {
-            if (DisplayText != null)
-                DisplayText(args);
+            DisplayText?.Invoke(args);
         }
-        
         public void DrawOverlayProxyHandler(DrawOverlayEventArgs args)
         {
-            if (DrawOverlay != null)
-                DrawOverlay(args);
+            DrawOverlay?.Invoke(args);
         }
     }
 }

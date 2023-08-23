@@ -1,35 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Capture.Hook.Common;
-using SharpDX.Direct3D11;
+﻿using Capture.Hook.Common;
 using SharpDX;
-using System.Diagnostics;
+using SharpDX.Direct3D11;
+using System;
+using System.Collections.Generic;
 
 namespace Capture.Hook.DX11
 {
-    internal class DXOverlayEngine: Component
+    internal class DXOverlayEngine : Component
     {
         public List<IOverlay> Overlays { get; set; }
-        public bool DeferredContext
-        {
-            get
-            {
-                return _deviceContext.TypeInfo == DeviceContextType.Deferred;
-            }
-        }
+        public bool DeferredContext => _deviceContext.TypeInfo == DeviceContextType.Deferred;
 
-        bool _initialised = false;
-        bool _initialising = false;
-
-        Device _device;
-        DeviceContext _deviceContext;
-        Texture2D _renderTarget;
-        RenderTargetView _renderTargetView;
-        DXSprite _spriteEngine;
-        Dictionary<string, DXFont> _fontCache = new Dictionary<string, DXFont>();
-        Dictionary<Element, DXImage> _imageCache = new Dictionary<Element, DXImage>();
+        private bool _initialised = false;
+        private bool _initialising = false;
+        private Device _device;
+        private DeviceContext _deviceContext;
+        private Texture2D _renderTarget;
+        private RenderTargetView _renderTargetView;
+        private DXSprite _spriteEngine;
+        private Dictionary<string, DXFont> _fontCache = new Dictionary<string, DXFont>();
+        private Dictionary<Element, DXImage> _imageCache = new Dictionary<Element, DXImage>();
 
         public DXOverlayEngine()
         {
@@ -53,7 +43,7 @@ namespace Capture.Hook.DX11
                 return false;
 
             _initialising = true;
-            
+
             try
             {
 
@@ -69,13 +59,6 @@ namespace Capture.Hook.DX11
                 }
 
                 _renderTargetView = ToDispose(new RenderTargetView(_device, _renderTarget));
-
-                //if (DeferredContext)
-                //{
-                //    ViewportF[] viewportf = { new ViewportF(0, 0, _renderTarget.Description.Width, _renderTarget.Description.Height, 0, 1) };
-                //    _deviceContext.Rasterizer.SetViewports(viewportf);
-                //    _deviceContext.OutputMerger.SetTargets(_renderTargetView);
-                //}
 
                 _spriteEngine = ToDispose(new DXSprite(_device, _deviceContext));
                 if (!_spriteEngine.Initialize())
@@ -93,7 +76,7 @@ namespace Capture.Hook.DX11
             }
         }
 
-        void InitialiseElementResources()
+        private void InitialiseElementResources()
         {
             foreach (var overlay in Overlays)
             {
@@ -116,12 +99,9 @@ namespace Capture.Hook.DX11
 
         private void Begin()
         {
-            //if (!DeferredContext)
-            //{
-                SharpDX.Mathematics.Interop.RawViewportF[] viewportf = { new ViewportF(0, 0, _renderTarget.Description.Width, _renderTarget.Description.Height, 0, 1) };
-                _deviceContext.Rasterizer.SetViewports(viewportf);
-                _deviceContext.OutputMerger.SetTargets(_renderTargetView);
-            //}
+            SharpDX.Mathematics.Interop.RawViewportF[] viewportf = { new ViewportF(0, 0, _renderTarget.Description.Width, _renderTarget.Description.Height, 0, 1) };
+            _deviceContext.Rasterizer.SetViewports(viewportf);
+            _deviceContext.OutputMerger.SetTargets(_renderTargetView);
         }
 
         /// <summary>
@@ -149,7 +129,7 @@ namespace Capture.Hook.DX11
                     if (textElement != null)
                     {
                         DXFont font = GetFontForTextElement(textElement);
-                        if (font != null && !String.IsNullOrEmpty(textElement.Text))
+                        if (font != null && !string.IsNullOrEmpty(textElement.Text))
                             _spriteEngine.DrawString(textElement.Location.X, textElement.Location.Y, textElement.Text, textElement.Color, font);
                     }
                     else if (imageElement != null)
@@ -174,11 +154,11 @@ namespace Capture.Hook.DX11
             }
         }
 
-        DXFont GetFontForTextElement(TextElement element)
+        private DXFont GetFontForTextElement(TextElement element)
         {
             DXFont result = null;
 
-            string fontKey = String.Format("{0}{1}{2}{3}", element.Font.Name, element.Font.Size, element.Font.Style, element.AntiAliased);
+            string fontKey = string.Format("{0}{1}{2}{3}", element.Font.Name, element.Font.Size, element.Font.Style, element.AntiAliased);
 
             if (!_fontCache.TryGetValue(fontKey, out result))
             {
@@ -189,7 +169,7 @@ namespace Capture.Hook.DX11
             return result;
         }
 
-        DXImage GetImageForImageElement(ImageElement element)
+        private DXImage GetImageForImageElement(ImageElement element)
         {
             DXImage result = null;
 
@@ -209,17 +189,12 @@ namespace Capture.Hook.DX11
         /// <param name="disposing">true if disposing both unmanaged and managed</param>
         protected override void Dispose(bool disposing)
         {
-            if (true)
+            if (disposing) // was true
             {
+                _device?.Dispose();
                 _device = null;
             }
             base.Dispose(disposing);
-        }
-
-        void SafeDispose(DisposeBase disposableObj)
-        {
-            if (disposableObj != null)
-                disposableObj.Dispose();
         }
     }
 }

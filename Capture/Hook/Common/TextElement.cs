@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Capture.Hook.Common
 {
     [Serializable]
-    public class TextElement: Element
+    public class TextElement : Element
     {
         public virtual string Text { get; set; }
         public virtual System.Drawing.Font Font { get; set; } = System.Drawing.SystemFonts.DefaultFont;

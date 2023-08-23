@@ -1,44 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using SharpDX;
 using SharpDX.Direct3D11;
-using SharpDX;
 using System.Diagnostics;
 
 namespace Capture.Hook.DX11
 {
     public class DXImage : Component
     {
-        Device _device;
-        DeviceContext _deviceContext;
-        Texture2D _tex;
-        ShaderResourceView _texSRV;
-        int _texWidth, _texHeight;
-        bool _initialised = false;
+        private Device _device;
+        private DeviceContext _deviceContext;
+        private Texture2D _tex;
+        private ShaderResourceView _texSRV;
+        private int _texWidth, _texHeight;
+        private bool _initialised = false;
 
-        public int Width
-        {
-            get
-            {
-                return _texWidth;
-            }
-        }
+        public int Width => _texWidth;
 
-        public int Height
-        {
-            get
-            {
-                return _texHeight;
-            }
-        }
-        
-        public Device Device
-        {
-            get { return _device; }
-        }
+        public int Height => _texHeight;
 
-        public DXImage(Device device, DeviceContext deviceContext): base("DXImage")
+        public Device Device => _device;
+
+        public DXImage(Device device, DeviceContext deviceContext) : base("DXImage")
         {
             _device = device;
             _deviceContext = deviceContext;
@@ -62,12 +43,14 @@ namespace Capture.Hook.DX11
             bmData = bitmap.LockBits(new System.Drawing.Rectangle(0, 0, _texWidth, _texHeight), System.Drawing.Imaging.ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
             try
             {
-                Texture2DDescription texDesc = new Texture2DDescription();
-                texDesc.Width = _texWidth;
-                texDesc.Height = _texHeight;
-                texDesc.MipLevels = 1;
-                texDesc.ArraySize = 1;
-                texDesc.Format = SharpDX.DXGI.Format.B8G8R8A8_UNorm;
+                Texture2DDescription texDesc = new Texture2DDescription
+                {
+                    Width = _texWidth,
+                    Height = _texHeight,
+                    MipLevels = 1,
+                    ArraySize = 1,
+                    Format = SharpDX.DXGI.Format.B8G8R8A8_UNorm
+                };
                 texDesc.SampleDescription.Count = 1;
                 texDesc.SampleDescription.Quality = 0;
                 texDesc.Usage = ResourceUsage.Immutable;
@@ -84,9 +67,11 @@ namespace Capture.Hook.DX11
                 if (_tex == null)
                     return false;
 
-                ShaderResourceViewDescription srvDesc = new ShaderResourceViewDescription();
-                srvDesc.Format = SharpDX.DXGI.Format.B8G8R8A8_UNorm;
-                srvDesc.Dimension = SharpDX.Direct3D.ShaderResourceViewDimension.Texture2D;
+                ShaderResourceViewDescription srvDesc = new ShaderResourceViewDescription
+                {
+                    Format = SharpDX.DXGI.Format.B8G8R8A8_UNorm,
+                    Dimension = SharpDX.Direct3D.ShaderResourceViewDimension.Texture2D
+                };
                 srvDesc.Texture2D.MipLevels = 1;
                 srvDesc.Texture2D.MostDetailedMip = 0;
 

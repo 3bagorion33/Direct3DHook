@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace Capture.Hook
+﻿namespace Capture.Hook
 {
     public static class DX9FormatExtension
     {
@@ -25,7 +20,7 @@ namespace Capture.Hook
                     return -1;
             }
         }
-        
+
         public static System.Drawing.Imaging.PixelFormat ToPixelFormat(this SharpDX.Direct3D9.Format format)
         {
             // Only support the BackBuffer formats: http://msdn.microsoft.com/en-us/library/windows/desktop/bb172558(v=vs.85).aspx

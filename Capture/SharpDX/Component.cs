@@ -1,9 +1,4 @@
 ﻿using System;
-using SharpDX;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SharpDX
 {
@@ -69,11 +64,7 @@ namespace SharpDX
                 IsDisposing = true;
 
                 // Call the disposing event.
-                var handler = Disposing;
-                if (handler != null)
-                {
-                    handler(this, EventArgs.Empty);
-                }
+                Disposing?.Invoke(this, EventArgs.Empty);
 
                 Dispose(true);
                 IsDisposed = true;
@@ -90,8 +81,7 @@ namespace SharpDX
             if (disposeManagedResources)
             {
                 // Dispose all ComObjects
-                if (DisposeCollector != null)
-                    DisposeCollector.Dispose();
+                DisposeCollector?.Dispose();
                 DisposeCollector = null;
             }
         }
@@ -102,13 +92,13 @@ namespace SharpDX
         /// <param name="toDisposeArg">To dispose.</param>
         protected internal T ToDispose<T>(T toDisposeArg)
         {
-            if (!ReferenceEquals(toDisposeArg, null))
+            if (toDisposeArg is object)
             {
                 if (DisposeCollector == null)
                     DisposeCollector = new DisposeCollector();
                 return DisposeCollector.Collect(toDisposeArg);
             }
-            return default(T);
+            return default;
         }
 
         /// <summary>
@@ -117,8 +107,8 @@ namespace SharpDX
         /// <param name="objectToDispose">Object to dispose.</param>
         protected internal void RemoveAndDispose<T>(ref T objectToDispose)
         {
-            if (!ReferenceEquals(objectToDispose, null) && DisposeCollector != null)
-                DisposeCollector.RemoveAndDispose(ref objectToDispose);
+            if (objectToDispose is object)
+                DisposeCollector?.RemoveAndDispose(ref objectToDispose);
         }
 
         /// <summary>
@@ -128,8 +118,8 @@ namespace SharpDX
         /// <param name="toDisposeArg">To dispose.</param>
         protected internal void RemoveToDispose<T>(T toDisposeArg)
         {
-            if (!ReferenceEquals(toDisposeArg, null) && DisposeCollector != null)
-                DisposeCollector.Remove(toDisposeArg);
+            if (toDisposeArg is object)
+                DisposeCollector?.Remove(toDisposeArg);
         }
     }
 }

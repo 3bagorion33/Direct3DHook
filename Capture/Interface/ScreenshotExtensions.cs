@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
+﻿using System.Drawing;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace Capture.Interface
 {
@@ -44,7 +40,7 @@ namespace Capture.Interface
             MemoryStream ms = new MemoryStream(imageBytes);
             try
             {
-                Bitmap image = (Bitmap)Image.FromStream(ms);
+                Bitmap image = (Bitmap) Image.FromStream(ms);
                 return image;
             }
             catch

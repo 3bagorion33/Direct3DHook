@@ -1,26 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Capture.Hook;
+﻿using Capture.Hook;
 using Capture.Interface;
-using System.Threading.Tasks;
+using System;
+using System.Collections.Generic;
 using System.Runtime.Remoting.Channels.Ipc;
+using System.Threading.Tasks;
 
 namespace Capture
 {
     public class EntryPoint : EasyHook.IEntryPoint
     {
-        List<IDXHook> _directXHooks = new List<IDXHook>();
-        IDXHook _directXHook = null;
+        private List<IDXHook> _directXHooks = new List<IDXHook>();
+        private IDXHook _directXHook = null;
         private CaptureInterface _interface;
         private System.Threading.ManualResetEvent _runWait;
-        ClientCaptureInterfaceEventProxy _clientEventProxy = new ClientCaptureInterfaceEventProxy();
-        IpcServerChannel _clientServerChannel = null;
+        private ClientCaptureInterfaceEventProxy _clientEventProxy = new ClientCaptureInterfaceEventProxy();
+        private IpcServerChannel _clientServerChannel = null;
 
         public EntryPoint(
             EasyHook.RemoteHooking.IContext context,
-            String channelName,
+            string channelName,
             CaptureConfig config)
         {
             // Get reference to IPC to host application
@@ -31,24 +29,28 @@ namespace Capture
             _interface.Ping();
 
             #region Allow client event handlers (bi-directional IPC)
-            
-            // Attempt to create a IpcServerChannel so that any event handlers on the client will function correctly
-            System.Collections.IDictionary properties = new System.Collections.Hashtable();
-            properties["name"] = channelName;
-            properties["portName"] = channelName + Guid.NewGuid().ToString("N"); // random portName so no conflict with existing channels of channelName
 
-            System.Runtime.Remoting.Channels.BinaryServerFormatterSinkProvider binaryProv = new System.Runtime.Remoting.Channels.BinaryServerFormatterSinkProvider();
-            binaryProv.TypeFilterLevel = System.Runtime.Serialization.Formatters.TypeFilterLevel.Full;
+            // Attempt to create a IpcServerChannel so that any event handlers on the client will function correctly
+            System.Collections.IDictionary properties = new System.Collections.Hashtable
+            {
+                ["name"] = channelName,
+                ["portName"] = channelName + Guid.NewGuid().ToString("N") // random portName so no conflict with existing channels of channelName
+            };
+
+            System.Runtime.Remoting.Channels.BinaryServerFormatterSinkProvider binaryProv = new System.Runtime.Remoting.Channels.BinaryServerFormatterSinkProvider
+            {
+                TypeFilterLevel = System.Runtime.Serialization.Formatters.TypeFilterLevel.Full
+            };
 
             System.Runtime.Remoting.Channels.Ipc.IpcServerChannel _clientServerChannel = new System.Runtime.Remoting.Channels.Ipc.IpcServerChannel(properties, binaryProv);
             System.Runtime.Remoting.Channels.ChannelServices.RegisterChannel(_clientServerChannel, false);
-            
+
             #endregion
         }
 
         public void Run(
             EasyHook.RemoteHooking.IContext context,
-            String channelName,
+            string channelName,
             CaptureConfig config)
         {
             // When not using GAC there can be issues with remoting assemblies resolving correctly
@@ -56,7 +58,7 @@ namespace Capture
             AppDomain currentDomain = AppDomain.CurrentDomain;
             currentDomain.AssemblyResolve += (sender, args) =>
             {
-                return this.GetType().Assembly.FullName == args.Name ? this.GetType().Assembly : null;
+                return GetType().Assembly.FullName == args.Name ? GetType().Assembly : null;
             };
 
             // NOTE: This is running in the target process
@@ -118,7 +120,6 @@ namespace Capture
                 System.Threading.Thread.Sleep(100);
             }
         }
-
         private void DisposeDirectXHook()
         {
             if (_directXHooks != null)
@@ -134,6 +135,7 @@ namespace Capture
                     dxHook.Dispose();
 
                 _directXHooks.Clear();
+                _clientEventProxy.Dispose();
             }
         }
 
@@ -260,9 +262,9 @@ namespace Capture
 
         #region Check Host Is Alive
 
-        Task _checkAlive;
-        long _stopCheckAlive = 0;
-        
+        private Task _checkAlive;
+        private long _stopCheckAlive = 0;
+
         /// <summary>
         /// Begin a background thread to check periodically that the host process is still accessible on its IPC channel
         /// </summary>
